@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Warehouse KPI Platform</title>
+  <link rel="stylesheet" href="src/styles/styles.css"/>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     AUTH PAGE
+════════════════════════════════════════════════════════════ -->
+<div id="authPage">
+  <div class="auth-card">
+    <h1>📦 Warehouse KPI</h1>
+    <p class="auth-sub">Multi-user performance tracking platform</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@company.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"/></div>
+      <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+    </div>
+
+    <div id="registerForm" style="display:none">
+      <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="John Smith"/></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="you@company.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="regPassword" placeholder="Min 6 characters"/></div>
+      <div class="field"><label>Role</label>
+        <select id="regRole">
+          <option value="employee">Employee</option>
+          <option value="manager">Manager</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="handleRegister()">Create Account</button>
+    </div>
+    <p id="authError"></p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     APP PAGE
+════════════════════════════════════════════════════════════ -->
+<div id="appPage">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────── -->
+  <div class="sidebar" id="sidebar">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <h1>Warehouse</h1>
+      <p>KPI Logger</p>
+    </div>
+
+    <!-- Main nav -->
+    <div class="sidebar-label">Navigation</div>
+    <button class="nav-btn active" data-view="dashboard" onclick="switchView('dashboard')">
+      <span class="nav-icon">▦</span> Dashboard
+    </button>
+    <button class="nav-btn" data-view="receiving" onclick="switchView('receiving')">
+      <span class="nav-icon">+</span> Daily Entry
+    </button>
+    <button class="nav-btn" data-view="records" onclick="switchView('records')">
+      <span class="nav-icon">≡</span> Records
+    </button>
+    <button class="nav-btn" data-view="targets" onclick="switchView('targets')">
+      <span class="nav-icon">◎</span> KPI Targets
+    </button>
+
+    <!-- Departments (dashboard only) -->
+    <div id="deptSection">
+      <div class="sidebar-label">Departments</div>
+      <button class="dept-btn active" data-dept="receiving" onclick="switchDept(this,'receiving')">
+        <span class="dept-dot" style="background:#1f6feb"></span> Receiving
+      </button>
+      <button class="dept-btn" data-dept="putaway" onclick="switchDept(this,'putaway')">
+        <span class="dept-dot" style="background:#1f9d55"></span> Putaway
+      </button>
+      <button class="dept-btn" data-dept="picking" onclick="switchDept(this,'picking')">
+        <span class="dept-dot" style="background:#d79b00"></span> Picking
+      </button>
+      <button class="dept-btn" data-dept="shipping" onclick="switchDept(this,'shipping')">
+        <span class="dept-dot" style="background:#9b59b6"></span> Shipping
+      </button>
+      <button class="dept-btn" data-dept="inventory" onclick="switchDept(this,'inventory')">
+        <span class="dept-dot" style="background:#e74c3c"></span> Inventory
+      </button>
+      <button class="dept-btn" data-dept="operations" onclick="switchDept(this,'operations')">
+        <span class="dept-dot" style="background:#16a085"></span> Operations
+      </button>
+    </div>
+
+    <!-- Manager nav -->
+    <div id="managerNav" style="display:none">
+      <div class="sidebar-label">Manager</div>
+      <button class="nav-btn" data-view="manager" onclick="switchView('manager')">
+        <span class="nav-icon">📊</span> Team Dashboard
+      </button>
+    </div>
+
+    <!-- User info at bottom -->
+    <div class="sidebar-user">
+      <div>
+        <div class="sidebar-user-name" id="topbarName">—</div>
+        <div class="sidebar-user-role" id="topbarRole">—</div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- ── RIGHT SIDE ────────────────────────────────────────── -->
+  <div class="app-right">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h2 id="pageTitle">Receiving — Dashboard</h2>
+        <p id="pageSubtitle">Week of Apr 14 – Apr 20, 2026 · 5 entries logged</p>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" onclick="handleExportCsv()">Export<br>CSV</button>
+        <button class="topbar-btn" onclick="switchView('receiving')">+ Log<br>Entry</button>
+      </div>
+    </div>
+
+    <!-- Active timer banner -->
+    <div id="activeTimerBanner">
+      <span id="activeTimerLabel">Timer active</span>
+      <span id="activeTimerTick"></span>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="main-content">
+
+      <!-- ── DASHBOARD ─────────────────────────────────────── -->
+      <div id="view-dashboard" class="view active">
+        <p class="section-label">Key metrics</p>
+        <div class="kpi-grid" id="kpiGrid">
+          <!-- filled by JS -->
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3>Performance vs target</h3>
+            <div id="barChart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>Recent activity</h3>
+            <div class="activity-list" id="activityList">
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#1f6feb"></div>
+                <div>
+                  <div class="activity-text">94 units received, 2 errors logged</div>
+                  <div class="activity-time">Today · J. Martinez</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#1f9d55"></div>
+                <div>
+                  <div class="activity-text">On-time rate hit 98% for the shift</div>
+                  <div class="activity-time">Yesterday · K. Thompson</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#d79b00"></div>
+                <div>
+                  <div class="activity-text">Dock-to-stock below target (4.2h vs 3h)</div>
+                  <div class="activity-time">Apr 18 · R. Patel</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:#1f9d55"></div>
+                <div>
+                  <div class="activity-text">Zero equipment downtime reported</div>
+                  <div class="activity-time">Apr 17 · L. Chen</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DAILY ENTRY (Receiving) ───────────────────────── -->
+      <div id="view-receiving" class="view">
+        <div class="view-title">Daily Entry</div>
+        <div class="view-sub">Log a new receiving session</div>
+
+        <div class="card">
+          <h3>New session</h3>
+          <div class="form-row">
+            <div class="field"><label>Date</label><input type="date" id="f-date"/></div>
+            <div class="field"><label>Employee name</label><input type="text" id="empName" placeholder="Full name"/></div>
+            <div class="field"><label>Department</label>
+              <select id="deptSelect">
+                <option>Receiving</option><option>Putaway</option><option>Picking</option>
+                <option>Shipping</option><option>Inventory</option><option>Operations</option>
+              </select>
+            </div>
+            <div class="field"><label>Hours worked</label><input type="number" id="hoursWorked" placeholder="0" min="0"/></div>
+            <div class="field"><label>Units processed</label><input type="number" id="unitsInput" placeholder="0" min="1"/></div>
+            <div class="field"><label>Errors</label><input type="number" id="errorsInput" placeholder="0" min="0"/></div>
+            <div class="field"><label>Shipments</label><input type="number" id="shipmentsInput" placeholder="0" min="0"/></div>
+            <div class="field"><label>On-time shipments</label><input type="number" id="onTimeInput" placeholder="0" min="0"/></div>
+            <div class="field"><label>Equipment downtime (min)</label><input type="number" id="downtimeMin" placeholder="0" min="0"/></div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+            <button class="btn btn-green" id="startReceivingBtn" onclick="handleStartReceiving()">▶ Start Timer</button>
+            <button class="btn btn-red" onclick="handleStopReceiving()">■ Stop &amp; Save</button>
+          </div>
+          <div id="receivingStatus" class="status-msg" style="display:none"></div>
+          <div class="elapsed-badge" id="receivingElapsed" style="display:none">0 min</div>
+        </div>
+      </div>
+
+      <!-- ── RECORDS ───────────────────────────────────────── -->
+      <div id="view-records" class="view">
+        <div class="view-title">Records</div>
+        <div class="view-sub">All logged sessions</div>
+        <div class="card" style="overflow-x:auto">
+          <h3>Session history</h3>
+          <div id="receivingLog"><p class="muted">No sessions yet.</p></div>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <h3>Downtime log</h3>
+          <div id="downtimeLog"><p class="muted">No downtime logged yet.</p></div>
+        </div>
+      </div>
+
+      <!-- ── KPI TARGETS ───────────────────────────────────── -->
+      <div id="view-targets" class="view">
+        <div class="view-title">KPI Targets</div>
+        <div class="view-sub">Set performance benchmarks by category</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="card">
+            <h3>Accuracy &amp; quality</h3>
+            <div class="field"><label>Min accuracy rate (%)</label><input type="number" value="95"/></div>
+            <div class="field"><label>Max error rate (%)</label><input type="number" value="2"/></div>
+            <div class="field"><label>On-time shipment target (%)</label><input type="number" value="96"/></div>
+          </div>
+          <div class="card">
+            <h3>Throughput</h3>
+            <div class="field"><label>Min units/hour</label><input type="number" value="40"/></div>
+            <div class="field"><label>Pick rate target (units/hr)</label><input type="number" value="60"/></div>
+            <div class="field"><label>Dock-to-stock target (hrs)</label><input type="number" value="3"/></div>
+          </div>
+          <div class="card">
+            <h3>Operations</h3>
+            <div class="field"><label>Max equipment downtime (min)</label><input type="number" value="30"/></div>
+            <div class="field"><label>Max incidents/week</label><input type="number" value="2"/></div>
+          </div>
+          <div class="card">
+            <h3>Inventory</h3>
+            <div class="field"><label>Min inventory accuracy (%)</label><input type="number" value="98"/></div>
+            <div class="field"><label>Max shrinkage (%)</label><input type="number" value="0.5"/></div>
+          </div>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-blue">Save targets</button></div>
+      </div>
+
+      <!-- ── DOWNTIME (hidden, accessible via Records) ─────── -->
+      <div id="view-downtime" class="view">
+        <div class="view-title">Downtime Tracker</div>
+        <div class="view-sub">Log equipment, labor, or system downtime events</div>
+        <div class="card">
+          <h3>Log downtime</h3>
+          <div class="form-row">
+            <div class="field"><label>Category</label><select id="downtimeCategory"></select></div>
+            <div class="field"><label>Notes (optional)</label><input type="text" id="downtimeNotes" placeholder="Brief description..."/></div>
+            <div class="field" style="align-self:end"><div class="elapsed-badge" id="downtimeElapsed">0 min</div></div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-red" id="startDowntimeBtn" onclick="handleStartDowntime()">▶ Start Downtime</button>
+            <button class="btn btn-gray" onclick="handleStopDowntime()">■ Stop &amp; Save</button>
+          </div>
+          <div id="downtimeStatus" class="status-msg" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- ── ASSIGNMENTS ───────────────────────────────────── -->
+      <div id="view-assignments" class="view">
+        <div class="view-title">Assignments</div>
+        <div class="view-sub">Tasks assigned to you or by you</div>
+        <div class="card" id="addTaskCard" style="display:none">
+          <h3>Add task</h3>
+          <div class="form-row">
+            <div class="field"><label>Task</label><input type="text" id="taskInput" placeholder="e.g. Unload truck 14"/></div>
+            <div class="field"><label>Assign to</label><select id="assignToSelect"><option value="">Loading...</option></select></div>
+            <div class="field"><label>Priority</label>
+              <select id="taskPriority">
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-blue" onclick="handleAddTask()">Add Task</button>
+          <div id="taskStatus" class="status-msg" style="display:none"></div>
+        </div>
+        <div class="card"><h3>Task list</h3><div id="taskList"><p class="muted">No tasks yet.</p></div></div>
+      </div>
+
+      <!-- ── MANAGER DASHBOARD ─────────────────────────────── -->
+      <div id="view-manager" class="view">
+        <div class="view-title">Team Dashboard</div>
+        <div class="view-sub">Live performance across all employees</div>
+        <div class="kpi-grid" id="mgr-kpis"></div>
+        <div class="card"><h3>Employee leaderboard</h3><div id="leaderboard"><p class="muted">Loading...</p></div></div>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /app-right -->
+</div><!-- /appPage -->
+
+<!-- ════════════════════════════════════════════════════════════
+     DEPARTMENT KPI DATA
+════════════════════════════════════════════════════════════ -->
+<script>
+const DEPT_DATA = {
+  receiving: {
+    title: "Receiving",
+    kpis: [
+      { label: "Accuracy rate",  value: "96.8%", sub: "Target: 95%",    status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Dock-to-stock",  value: "3.4h",  sub: "Target: ≤3h",    status: "yellow", badge: "Near target", bc: "badge-yellow" },
+      { label: "Receipts today", value: "94",     sub: "Units processed", status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Error rate",     value: "2.1%",  sub: "Target: ≤2%",    status: "yellow", badge: "Near target", bc: "badge-yellow" }
+    ],
+    bars: [
+      { label: "Accuracy",     pct: 97, color: "#1f6feb" },
+      { label: "On-time",      pct: 91, color: "#1f9d55" },
+      { label: "Throughput",   pct: 78, color: "#d79b00" },
+      { label: "Dock-to-stock",pct: 85, color: "#9b59b6" }
+    ]
+  },
+  putaway: {
+    title: "Putaway",
+    kpis: [
+      { label: "Putaway accuracy",  value: "98.2%", sub: "Target: 95%",    status: "green", badge: "On target", bc: "badge-green" },
+      { label: "Avg cycle time",    value: "18 min", sub: "Target: ≤20 min",status: "green", badge: "On target", bc: "badge-green" },
+      { label: "Units putaway",     value: "112",    sub: "Today",          status: "green", badge: "On target", bc: "badge-green" },
+      { label: "Misplacement rate", value: "0.8%",  sub: "Target: ≤1%",   status: "green", badge: "On target", bc: "badge-green" }
+    ],
+    bars: [
+      { label: "Accuracy",    pct: 98, color: "#1f9d55" },
+      { label: "Speed",       pct: 92, color: "#1f6feb" },
+      { label: "Capacity use",pct: 74, color: "#d79b00" },
+      { label: "Zero errors", pct: 99, color: "#16a085" }
+    ]
+  },
+  picking: {
+    title: "Picking",
+    kpis: [
+      { label: "Pick rate",      value: "58/hr",  sub: "Target: 60/hr", status: "yellow", badge: "Near target", bc: "badge-yellow" },
+      { label: "Pick accuracy",  value: "99.1%",  sub: "Target: 99%",   status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Order fill rate",value: "97.4%",  sub: "Target: 96%",   status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Travel time",    value: "22 min", sub: "Per batch avg", status: "green",  badge: "Efficient",   bc: "badge-green"  }
+    ],
+    bars: [
+      { label: "Pick rate",  pct: 97, color: "#d79b00" },
+      { label: "Accuracy",   pct: 99, color: "#1f9d55" },
+      { label: "Fill rate",  pct: 97, color: "#1f6feb" },
+      { label: "Efficiency", pct: 88, color: "#9b59b6" }
+    ]
+  },
+  shipping: {
+    title: "Shipping",
+    kpis: [
+      { label: "On-time rate",    value: "94.2%", sub: "Target: 96%",  status: "yellow", badge: "Near target", bc: "badge-yellow" },
+      { label: "Damage-free rate",value: "99.6%", sub: "Target: 99%",  status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Orders shipped",  value: "67",    sub: "Today",        status: "green",  badge: "Normal",      bc: "badge-green"  },
+      { label: "Return rate",     value: "1.2%",  sub: "Target: ≤2%", status: "green",  badge: "On target",   bc: "badge-green"  }
+    ],
+    bars: [
+      { label: "On-time",      pct: 94,  color: "#9b59b6" },
+      { label: "Damage-free",  pct: 100, color: "#1f9d55" },
+      { label: "Label accuracy",pct: 99, color: "#1f6feb" },
+      { label: "Pack rate",    pct: 82,  color: "#d79b00" }
+    ]
+  },
+  inventory: {
+    title: "Inventory",
+    kpis: [
+      { label: "Inventory accuracy",   value: "97.8%", sub: "Target: 98%",    status: "yellow", badge: "Near target", bc: "badge-yellow" },
+      { label: "Shrinkage",            value: "0.3%",  sub: "Target: ≤0.5%", status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Space utilization",    value: "82%",   sub: "Of total capacity",status:"green", badge: "Optimal",     bc: "badge-green"  },
+      { label: "Cycle count accuracy", value: "99.2%", sub: "Last count",     status: "green",  badge: "On target",   bc: "badge-green"  }
+    ],
+    bars: [
+      { label: "Accuracy",    pct: 98, color: "#e74c3c" },
+      { label: "Shrinkage ctl",pct:94, color: "#1f9d55" },
+      { label: "Space use",   pct: 82, color: "#1f6feb" },
+      { label: "Cycle count", pct: 99, color: "#d79b00" }
+    ]
+  },
+  operations: {
+    title: "Operations",
+    kpis: [
+      { label: "Equipment uptime",   value: "97.1%",   sub: "Target: 98%", status: "yellow", badge: "Near target", bc: "badge-yellow" },
+      { label: "Incidents this week",value: "1",       sub: "Target: ≤2",  status: "green",  badge: "On target",   bc: "badge-green"  },
+      { label: "Avg downtime",       value: "12 min",  sub: "Per shift",   status: "green",  badge: "Low",         bc: "badge-green"  },
+      { label: "Safety score",       value: "9.4/10",  sub: "This month",  status: "green",  badge: "Excellent",   bc: "badge-green"  }
+    ],
+    bars: [
+      { label: "Uptime",      pct: 97,  color: "#16a085" },
+      { label: "Safety",      pct: 94,  color: "#1f9d55" },
+      { label: "Maintenance", pct: 88,  color: "#1f6feb" },
+      { label: "Compliance",  pct: 100, color: "#d79b00" }
+    ]
+  }
+};
+
+let currentDept = "receiving";
+let currentView = "dashboard";
+
+function renderDept(dept) {
+  const d = DEPT_DATA[dept];
+  document.getElementById("kpiGrid").innerHTML = d.kpis.map(k => `
+    <div class="kpi-card ${k.status}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      <span class="kpi-badge ${k.bc}">${k.badge}</span>
+    </div>`).join("");
+  document.getElementById("barChart").innerHTML = d.bars.map(b => `
+    <div class="bar-row">
+      <div class="bar-label">${b.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${b.pct}%;background:${b.color}"></div></div>
+      <div class="bar-pct">${b.pct}%</div>
+    </div>`).join("");
+}
+
+function switchDept(btn, dept) {
+  document.querySelectorAll(".dept-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  currentDept = dept;
+  renderDept(dept);
+  updatePageTitle();
+}
+
+function updatePageTitle() {
+  const viewLabels = { dashboard: "Dashboard", receiving: "Daily Entry", records: "Records", targets: "KPI Targets", manager: "Team Dashboard", downtime: "Downtime", assignments: "Assignments" };
+  const deptName = DEPT_DATA[currentDept]?.title || "";
+  const isDash = currentView === "dashboard";
+  document.getElementById("pageTitle").textContent = isDash ? `${deptName} — Dashboard` : viewLabels[currentView] || currentView;
+}
+
+window.switchView = function(v) {
+  document.querySelectorAll(".view").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  const el = document.getElementById("view-" + v);
+  if (el) el.classList.add("active");
+  const btn = document.querySelector(`.nav-btn[data-view="${v}"]`);
+  if (btn) btn.classList.add("active");
+  currentView = v;
+  document.getElementById("deptSection").style.display = (v === "dashboard") ? "" : "none";
+  updatePageTitle();
+};
+
+window.handleExportCsv = function() { alert("Connect to Firebase to export real data."); };
+
+renderDept("receiving");
+</script>
+
+<!-- Firebase modules -->
+<script type="module">
+  import { auth, db } from "./src/firebase/config.js";
+  import { register, login, logout, getUserProfile, onAuthChange } from "./src/auth/auth.js";
+  import { startReceiving, stopReceiving, listenReceivingSessions, renderSessionLog } from "./src/pages/receiving.js";
+  import { initDowntimeCategories, startDowntime, stopDowntime, listenDowntimeLogs, renderDowntimeLog } from "./src/pages/downtime.js";
+  import { loadEmployees, addTask, updateTaskStatus, listenTasks, renderTasks } from "./src/pages/assignments.js";
+  import { listenManagerDashboard, listenManagerDowntime, renderManagerDashboard } from "./src/pages/dashboard.js";
+  import { formatMinutes, scoreColor } from "./src/components/ui.js";
+
+  let userProfile = null;
+  let unsubs = [];
+
+  window.switchAuthTab = (tab) => {
+    document.getElementById("loginForm").style.display   = tab === "login" ? "" : "none";
+    document.getElementById("registerForm").style.display = tab === "register" ? "" : "none";
+    document.getElementById("loginTab").classList.toggle("active", tab === "login");
+    document.getElementById("registerTab").classList.toggle("active", tab === "register");
+  };
+
+  window.handleLogin = async () => {
+    try { await login(document.getElementById("loginEmail").value, document.getElementById("loginPassword").value); }
+    catch(e) { document.getElementById("authError").textContent = e.message; }
+  };
+
+  window.handleRegister = async () => {
+    try { await register(document.getElementById("regName").value, document.getElementById("regEmail").value, document.getElementById("regPassword").value, document.getElementById("regRole").value); }
+    catch(e) { document.getElementById("authError").textContent = e.message; }
+  };
+
+  window.handleLogout = async () => {
+    unsubs.forEach(u => u && u()); unsubs = [];
+    await logout();
+  };
+
+  window.handleStartReceiving = () => startReceiving();
+  window.handleStopReceiving  = () => stopReceiving(userProfile);
+  window.handleStartDowntime  = () => startDowntime();
+  window.handleStopDowntime   = () => stopDowntime(userProfile);
+  window.handleAddTask        = () => addTask(userProfile);
+  window._updateTask          = (id, status) => updateTaskStatus(id, status);
+
+  onAuthChange(async (user) => {
+    if (user) {
+      userProfile = await getUserProfile(user.uid);
+      document.getElementById("authPage").style.display = "none";
+      document.getElementById("appPage").classList.add("active");
+      document.getElementById("topbarName").textContent = userProfile?.name || user.email;
+      document.getElementById("topbarRole").textContent = userProfile?.role || "employee";
+
+      const isManager = userProfile?.role === "manager";
+      if (isManager) { document.getElementById("managerNav").style.display = ""; document.getElementById("addTaskCard").style.display = ""; loadEmployees(); }
+
+      initDowntimeCategories();
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const weekStart = new Date(today); weekStart.setDate(today.getDate() - 6);
+      document.getElementById("pageSubtitle").textContent =
+        `Week of ${weekStart.toLocaleDateString([],{month:'short',day:'numeric'})} – ${today.toLocaleDateString([],{month:'short',day:'numeric'})}, ${today.getFullYear()}`;
+
+      document.getElementById("f-date").value = new Date().toISOString().slice(0,10);
+
+      unsubs.push(listenReceivingSessions(user.uid, sessions => {
+        renderSessionLog(sessions);
+        document.getElementById("receivingLog").innerHTML = sessions.length ? renderMiniLog(sessions) : '<p class="muted">No sessions yet.</p>';
+        const totalUnits = sessions.reduce((s,x) => s + (x.units||0), 0);
+        const avgUPH = sessions.length ? sessions.reduce((s,x) => s + x.unitsPerHour, 0) / sessions.length : 0;
+        document.getElementById("pageSubtitle").textContent =
+          document.getElementById("pageSubtitle").textContent.split("·")[0].trim() + ` · ${sessions.length} entries logged`;
+      }));
+
+      unsubs.push(listenDowntimeLogs(user.uid, logs => { renderDowntimeLog(logs); }));
+      unsubs.push(listenTasks(user.uid, isManager, tasks => { renderTasks(tasks, isManager); }));
+
+      if (isManager) {
+        let allS = [], allDT = [];
+        unsubs.push(listenManagerDashboard((s) => { allS = s; renderManagerDashboard(allS, allDT); }));
+        unsubs.push(listenManagerDowntime(l => { allDT = l; renderManagerDashboard(allS, allDT); }));
+      }
+    } else {
+      userProfile = null;
+      document.getElementById("authPage").style.display = "";
+      document.getElementById("appPage").classList.remove("active");
+    }
+  });
+
+  function renderMiniLog(sessions) {
+    return sessions.slice(0,10).map(s => `
+      <div class="log-row">
+        <span class="log-date">${new Date(s.startTime).toLocaleDateString([],{month:'short',day:'numeric'})}</span>
+        <span class="log-units">${s.units} units</span>
+        <span class="kpi-${scoreColor(s.unitsPerHour)}">${s.unitsPerHour.toFixed(1)} UPH</span>
+        <span class="log-dur">${formatMinutes(s.minutes)}</span>
+      </div>`).join("");
+  }
+</script>
+
+</body>
+</html>
